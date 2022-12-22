@@ -1,0 +1,21 @@
+#+title: Pacdiff.el
+#+author: Fabian Brosda
+#+date: 2022:12:22
+
+* About
+This package provides a small wrapper around the pacdiff utility used
+on Arch Linux systems to update configuration files after package
+updates.
+
+The package provides a buffer with an overview, with all files, which
+need maintenance.  You can then view the original configuration and
+the pacnew/pacsave version via ediff to merge the changes.
+Furthermore the buffer offers shortcuts to remove or overwrite with
+the pacnew/pacsave file.
+
+* Status
+The main functionality is already present, but the package is still a
+draft and some functions need implementation.
+
+* License
+BSD 3-Clause License, s.a. [[file:LICENSE]]
