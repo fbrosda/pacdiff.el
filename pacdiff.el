@@ -39,7 +39,10 @@
 	(t "red")))
 
 (defun pacdiff--get-file ()
-  (replace-regexp-in-string ":.*\n$" "" (thing-at-point 'line t)))
+  (let* ((l1 (thing-at-point 'line t))
+	 (l2 (string-chop-newline l1))
+	 (l3 (string-trim-left l2 "* ")))
+    (replace-regexp-in-string ":.*$" "" l3)))
 
 (defun pacdiff--get-base (filename)
   (replace-regexp-in-string "\\.pac\\(new\\|save\\)$" "" filename))
@@ -103,17 +106,17 @@
     (insert "* ")
     (insert (propertize f 'face `(:foreground ,(pacdiff--get-color f))))
     (insert ": ")
-    (insert-text-button "[Edit]"
+    (insert-text-button "(e)dit"
 			'action 'pacdiff--edit
 			'face 'bold
 			'help-echo "Edit files with ediff")
     (insert " ")
-    (insert-text-button "[Remove]"
+    (insert-text-button "(r)emove"
 			'action 'pacdiff--remove
 			'face 'bold
 			'help-echo "Remove pacnew")
     (insert " ")
-    (insert-text-button "[Overwrite]"
+    (insert-text-button "(o)verwrite"
 			'action 'pacdiff--overwrite
 			'face 'bold
 			'help-echo "Overwrite with pacnew")
@@ -132,7 +135,12 @@
 (defun pacdiff--refresh ()
   "Refresh the pacdiff buffer."
   (interactive)
-  (message "TODO"))
+  (when (equal (current-buffer) (get-buffer pacdiff-buffer))
+    (read-only-mode -1)
+    (erase-buffer)
+    (pacdiff--setup (current-buffer))
+    (read-only-mode)
+    (goto-line 1)))
 
 (defun pacdiff--quit ()
   "Kill buffer and quit the pacdiff session."
@@ -144,10 +152,9 @@
     (define-key map (kbd "n") 'pacdiff--next)
     (define-key map (kbd "p") 'pacdiff--previous)
     (define-key map (kbd "q") 'pacdiff--quit)
-    (define-key map (kbd "r") 'pacdiff--refresh)
+    (define-key map (kbd "g") 'pacdiff--refresh)
     (define-key map (kbd "e") 'pacdiff--edit)
-    (define-key map (kbd "<return>") 'pacdiff--edit)
-    (define-key map (kbd "x") 'pacdiff--remove)
+    (define-key map (kbd "r") 'pacdiff--remove)
     (define-key map (kbd "o") 'pacdiff--overwrite)
     (define-key map (kbd "<tab>") 'pacdiff--next-button)
     (define-key map (kbd "<backtab>") 'pacdiff--previous-button)
