@@ -22,6 +22,11 @@
 (defcustom pacdiff-cmd "/usr/bin/pacdiff -o"
   "The binary used to create pacdiff output.")
 
+;; Untested, but this way someone who prefers doas over sudo could
+;; change this, right?
+(defcustom pacdiff-tramp "/sudo::"
+  "Tramp Method to get write permissions for the config files.")
+
 (defun pacdiff--find ()
   "Find packages files needing a merge using pacdiff."
   (let ((files (shell-command-to-string pacdiff-cmd)))
@@ -39,15 +44,19 @@
 	(t "red")))
 
 (defun pacdiff--get-file ()
+  "Get the filename from an entry line in the pacdiff buffer."
   (let* ((l1 (thing-at-point 'line t))
 	 (l2 (string-chop-newline l1))
 	 (l3 (string-trim-left l2 "* ")))
     (replace-regexp-in-string ":.*$" "" l3)))
 
 (defun pacdiff--get-base (filename)
+  "Get the base filename from a FILENAME including the
+.pacnew/.pacsave ending."
   (replace-regexp-in-string "\\.pac\\(new\\|save\\)$" "" filename))
 
 (defun pacdiff--next-button ()
+  "Jump to next button."
   (interactive)
   (let* ((pos (point))
 	 (btn (next-button pos)))
@@ -56,6 +65,7 @@
       (goto-char btn))))
 
 (defun pacdiff--previous-button ()
+  "Jump to previous button."
   (interactive)
   (let* ((pos (point))
 	 (btn (previous-button pos)))
@@ -64,12 +74,14 @@
       (goto-char btn))))
 
 (defun pacdiff--next ()
+  "Move to next entry."
   (interactive)
   (forward-char 1)
   (re-search-forward "^*" nil t)
   (beginning-of-line))
 
 (defun pacdiff--previous ()
+  "Move to previous entry."
   (interactive)
   (re-search-backward "^*" nil t))
 
@@ -81,14 +93,14 @@
     (unless (and basename (or (pacdiff--pacnew? filename)
 			      (pacdiff--pacsave? filename)))
       (error "Could not determine original file from pacdiff output."))
-    (ediff (concat "/sudo::" filename) (concat "/sudo::" basename))))
+    (ediff (concat pacdiff-tramp filename) (concat pacdiff-tramp basename))))
 
 (defun pacdiff--remove (&optional button)
   "Remove the pacnew/pacsave file."
   (interactive)
   (let ((filename (pacdiff--get-file)))
     (when (y-or-n-p (format "Delete file: \"%s\"" filename))
-      (delete-file (concat "/sudo::" filename)))))
+      (delete-file (concat pacdiff-tramp filename)))))
 
 (defun pacdiff--overwrite (&optional button)
   "Overwrite original file with pacnew/pacsave."
@@ -102,6 +114,8 @@
       (rename-file filename basename))))
 
 (defun pacdiff--format-files (files)
+  "Insert one line for each file in FILES into the pacdiff buffer,
+including the different edit buttons."
   (dolist (f files)
     (insert "* ")
     (insert (propertize f 'face `(:foreground ,(pacdiff--get-color f))))
