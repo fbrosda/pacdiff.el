@@ -73,17 +73,29 @@
 	(goto-char (previous-button (point-max)))
       (goto-char btn))))
 
-(defun pacdiff-next ()
+(defun pacdiff-next (&optional arg)
   "Move to next entry."
-  (interactive)
-  (forward-char 1)
-  (re-search-forward "^*" nil t)
-  (beginning-of-line))
+  (interactive "^P")
+  (cond
+   ((eq arg '-)
+    (pacdiff-previous nil))
+   ((< (prefix-numeric-value arg) 0)
+    (pacdiff-previous (- (prefix-numeric-value arg))))
+   (t
+    (forward-char 1)
+    (re-search-forward "^*" nil t (prefix-numeric-value arg))
+    (beginning-of-line))))
 
-(defun pacdiff-previous ()
+(defun pacdiff-previous (&optional arg)
   "Move to previous entry."
-  (interactive)
-  (re-search-backward "^*" nil t))
+  (interactive "^P")
+  (cond
+   ((eq arg '-)
+    (pacdiff-next nil))
+   ((< (prefix-numeric-value arg) 0)
+    (pacdiff-next (- (prefix-numeric-value arg))))
+   (t
+    (re-search-backward "^*" nil t (prefix-numeric-value arg)))))
 
 (defun pacdiff-edit (&optional button)
   "Edit original file and pacnew/pacsave via ediff."
@@ -163,8 +175,8 @@ including the different edit buttons."
 
 (defvar pacdiff-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "n") 'pacdiff-next)
-    (define-key map (kbd "p") 'pacdiff-previous)
+    (define-key map [remap scroll-up-command] 'pacdiff-next)
+    (define-key map [remap scroll-down-command] 'pacdiff-previous)
     (define-key map [remap quit-window] 'pacdiff-quit-window)
     (define-key map [remap revert-buffer] 'pacdiff-revert-buffer)
     (define-key map (kbd "e") 'pacdiff-edit)
