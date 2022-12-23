@@ -135,10 +135,10 @@
     (unless buffer
       (setq buffer (generate-new-buffer pacdiff-buffer))
       (pacdiff--setup buffer))
-    ;; TODO: start at the top
     (switch-to-buffer-other-window buffer)
     (pacdiff-mode)
-    (read-only-mode)))
+    (read-only-mode)
+    (goto-line 1)))
 
 (provide 'pacdiff)
 
