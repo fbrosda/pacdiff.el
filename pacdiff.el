@@ -60,6 +60,16 @@
 	(goto-char (previous-button (point-max)))
       (goto-char btn))))
 
+(defun pacdiff--next ()
+  (interactive)
+  (forward-char 1)
+  (re-search-forward "^*" nil t)
+  (beginning-of-line))
+
+(defun pacdiff--previous ()
+  (interactive)
+  (re-search-backward "^*" nil t))
+
 (defun pacdiff--edit (&optional button)
   "Edit original file and pacnew/pacsave via ediff."
   (interactive)
@@ -90,6 +100,7 @@
 
 (defun pacdiff--format-files (files)
   (dolist (f files)
+    (insert "* ")
     (insert (propertize f 'face `(:foreground ,(pacdiff--get-color f))))
     (insert ": ")
     (insert-text-button "[Edit]"
@@ -130,11 +141,12 @@
 
 (defvar pacdiff-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "n") 'next-line) ;; TODO
-    (define-key map (kbd "p") 'previous-line) ;; TODO
+    (define-key map (kbd "n") 'pacdiff--next)
+    (define-key map (kbd "p") 'pacdiff--previous)
     (define-key map (kbd "q") 'pacdiff--quit)
     (define-key map (kbd "r") 'pacdiff--refresh)
     (define-key map (kbd "e") 'pacdiff--edit)
+    (define-key map (kbd "<return>") 'pacdiff--edit)
     (define-key map (kbd "x") 'pacdiff--remove)
     (define-key map (kbd "o") 'pacdiff--overwrite)
     (define-key map (kbd "<tab>") 'pacdiff--next-button)
