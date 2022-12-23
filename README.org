@@ -14,8 +14,10 @@ Furthermore the buffer offers shortcuts to remove or overwrite with
 the pacnew/pacsave file.
 
 * Status
-The main functionality is already present, but the package is still a
-draft and some functions need implementation.
+Main functionality (edit, remove, overwrite) is available.
+Visualization of which changes have been made to a file could be
+improved.  The package messes with system configurations and needs
+root permissions to do so -> Take extra care when using it.
 
 * License
 BSD 3-Clause License, s.a. [[file:LICENSE]]
