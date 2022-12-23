@@ -55,7 +55,7 @@
 .pacnew/.pacsave ending."
   (replace-regexp-in-string "\\.pac\\(new\\|save\\)$" "" filename))
 
-(defun pacdiff--next-button ()
+(defun pacdiff-next-button ()
   "Jump to next button."
   (interactive)
   (let* ((pos (point))
@@ -64,7 +64,7 @@
 	(goto-char (next-button (point-min)))
       (goto-char btn))))
 
-(defun pacdiff--previous-button ()
+(defun pacdiff-previous-button ()
   "Jump to previous button."
   (interactive)
   (let* ((pos (point))
@@ -73,19 +73,19 @@
 	(goto-char (previous-button (point-max)))
       (goto-char btn))))
 
-(defun pacdiff--next ()
+(defun pacdiff-next ()
   "Move to next entry."
   (interactive)
   (forward-char 1)
   (re-search-forward "^*" nil t)
   (beginning-of-line))
 
-(defun pacdiff--previous ()
+(defun pacdiff-previous ()
   "Move to previous entry."
   (interactive)
   (re-search-backward "^*" nil t))
 
-(defun pacdiff--edit (&optional button)
+(defun pacdiff-edit (&optional button)
   "Edit original file and pacnew/pacsave via ediff."
   (interactive)
   (let* ((filename (pacdiff--get-file))
@@ -95,14 +95,14 @@
       (error "Could not determine original file from pacdiff output."))
     (ediff (concat pacdiff-tramp filename) (concat pacdiff-tramp basename))))
 
-(defun pacdiff--remove (&optional button)
+(defun pacdiff-remove (&optional button)
   "Remove the pacnew/pacsave file."
   (interactive)
   (let ((filename (pacdiff--get-file)))
     (when (y-or-n-p (format "Delete file: \"%s\"" filename))
       (delete-file (concat pacdiff-tramp filename)))))
 
-(defun pacdiff--overwrite (&optional button)
+(defun pacdiff-overwrite (&optional button)
   "Overwrite original file with pacnew/pacsave."
   (interactive)
   (let* ((filename (pacdiff--get-file))
@@ -121,17 +121,17 @@ including the different edit buttons."
     (insert (propertize f 'face `(:foreground ,(pacdiff--get-color f))))
     (insert ": ")
     (insert-text-button "(e)dit"
-			'action 'pacdiff--edit
+			'action 'pacdiff-edit
 			'face 'bold
 			'help-echo "Edit files with ediff")
     (insert " ")
     (insert-text-button "(r)emove"
-			'action 'pacdiff--remove
+			'action 'pacdiff-remove
 			'face 'bold
 			'help-echo "Remove pacnew")
     (insert " ")
     (insert-text-button "(o)verwrite"
-			'action 'pacdiff--overwrite
+			'action 'pacdiff-overwrite
 			'face 'bold
 			'help-echo "Overwrite with pacnew")
     (insert "\n")))
@@ -146,7 +146,7 @@ including the different edit buttons."
 	(insert (format "%d file(s):\n" (length files)))
 	(pacdiff--format-files files)))))
 
-(defun pacdiff--refresh ()
+(defun pacdiff-revert-buffer ()
   "Refresh the pacdiff buffer."
   (interactive)
   (when (equal (current-buffer) (get-buffer pacdiff-buffer))
@@ -156,26 +156,26 @@ including the different edit buttons."
     (read-only-mode)
     (goto-line 1)))
 
-(defun pacdiff--quit ()
+(defun pacdiff-quit-window ()
   "Kill buffer and quit the pacdiff session."
   (interactive)
-  (kill-buffer pacdiff-buffer))
+  (quit-window t))
 
 (defvar pacdiff-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "n") 'pacdiff--next)
-    (define-key map (kbd "p") 'pacdiff--previous)
-    (define-key map (kbd "q") 'pacdiff--quit)
-    (define-key map (kbd "g") 'pacdiff--refresh)
-    (define-key map (kbd "e") 'pacdiff--edit)
-    (define-key map (kbd "r") 'pacdiff--remove)
-    (define-key map (kbd "o") 'pacdiff--overwrite)
-    (define-key map (kbd "<tab>") 'pacdiff--next-button)
-    (define-key map (kbd "<backtab>") 'pacdiff--previous-button)
+    (define-key map (kbd "n") 'pacdiff-next)
+    (define-key map (kbd "p") 'pacdiff-previous)
+    (define-key map [remap quit-window] 'pacdiff-quit-window)
+    (define-key map [remap revert-buffer] 'pacdiff-revert-buffer)
+    (define-key map (kbd "e") 'pacdiff-edit)
+    (define-key map (kbd "r") 'pacdiff-remove)
+    (define-key map (kbd "o") 'pacdiff-overwrite)
+    (define-key map (kbd "<tab>") 'pacdiff-next-button)
+    (define-key map (kbd "<backtab>") 'pacdiff-previous-button)
     map)
   "Keymap for Pacdiff mode.")
 
-(define-derived-mode pacdiff-mode fundamental-mode "Pacdiff"
+(define-derived-mode pacdiff-mode special-mode "Pacdiff"
   "Major mode to edit pacdiff files.
 
 \\{pacdiff-mode-map}")
@@ -190,7 +190,6 @@ including the different edit buttons."
       (pacdiff--setup buffer))
     (switch-to-buffer-other-window buffer)
     (pacdiff-mode)
-    (read-only-mode)
     (goto-line 1)))
 
 (provide 'pacdiff)
