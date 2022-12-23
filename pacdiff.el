@@ -139,7 +139,7 @@ including the different edit buttons."
 (defun pacdiff--setup (buffer)
   "Setup pacdiff BUFFER."
   (with-current-buffer buffer
-    (insert (format "-*- mode:grep; \"%s\" -*-\n\n\n" pacdiff-cmd))
+    (insert (format "-*- results \"%s\" -*-\n\n\n" pacdiff-cmd))
     (let ((files (pacdiff--find)))
       (if (length= files 0)
 	  (insert "no files need merging.")
