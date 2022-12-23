@@ -111,7 +111,7 @@
 			      (pacdiff--pacsave? filename)))
       (error "Could not determine original file from pacdiff output."))
     (when (y-or-n-p (format "Move \"%s\" to \"%s\"" filename basename))
-      (rename-file filename basename))))
+      (rename-file (concat pacdiff-tramp filename) basename t))))
 
 (defun pacdiff--format-files (files)
   "Insert one line for each file in FILES into the pacdiff buffer,
