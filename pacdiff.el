@@ -44,6 +44,22 @@
 (defun pacdiff--get-base (filename)
   (replace-regexp-in-string "\\.pac\\(new\\|save\\)$" "" filename))
 
+(defun pacdiff--next-button ()
+  (interactive)
+  (let* ((pos (point))
+	 (btn (next-button pos)))
+    (if (eq btn nil)
+	(goto-char (next-button (point-min)))
+      (goto-char btn))))
+
+(defun pacdiff--previous-button ()
+  (interactive)
+  (let* ((pos (point))
+	 (btn (previous-button pos)))
+    (if (eq btn nil)
+	(goto-char (previous-button (point-max)))
+      (goto-char btn))))
+
 (defun pacdiff--edit (&optional button)
   "Edit original file and pacnew/pacsave via ediff."
   (interactive)
@@ -121,6 +137,8 @@
     (define-key map (kbd "e") 'pacdiff--edit)
     (define-key map (kbd "x") 'pacdiff--remove)
     (define-key map (kbd "o") 'pacdiff--overwrite)
+    (define-key map (kbd "<tab>") 'pacdiff--next-button)
+    (define-key map (kbd "<backtab>") 'pacdiff--previous-button)
     map)
   "Keymap for Pacdiff mode.")
 
