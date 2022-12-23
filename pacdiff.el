@@ -97,8 +97,10 @@
   (with-current-buffer buffer
     (insert (format "-*- mode:grep; \"%s\" -*-\n\n\n" pacdiff-cmd))
     (let ((files (pacdiff--find)))
-      (insert (format "%d file(s):\n" (length files)))
-      (pacdiff--format-files files))))
+      (if (length= files 0)
+	  (insert "no files need merging.")
+	(insert (format "%d file(s):\n" (length files)))
+	(pacdiff--format-files files)))))
 
 (defun pacdiff--refresh ()
   "Refresh the pacdiff buffer."
