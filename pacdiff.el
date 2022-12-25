@@ -4,20 +4,20 @@
 
 ;; Author: Fabian Brosda <fabi3141@gmx.de>
 ;; URL: https://github.com/fbrosda/pacdiff.el
+;; Package-Requires: ((emacs "28.1"))
 ;; Version: 1.0
-;; Package-Requires: ((emacs "27"))
-;; Keywords: pacman, pacdiff
 
 ;;; Commentary:
 
-;; This package provides the function `pacdiff' to manage *.pacnew and
+;; This package provides the function 'pacdiff' to manage *.pacnew and
 ;; *.pacsave files, which are created by the Arch Linux package
 ;; manager.
 
 ;;; Code:
 
 (defgroup pacdiff nil
-  "Manage pacdiff files from within emacs.")
+  "Manage pacdiff files from within emacs."
+  :group 'packages)
 
 (defcustom pacdiff-buffer "*pacdiff*"
   "The name of the pacdiff buffer."
