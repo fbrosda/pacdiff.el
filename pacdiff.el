@@ -5,7 +5,7 @@
 ;; Author: Fabian Brosda <fabi3141@gmx.de>
 ;; URL: https://github.com/fbrosda/pacdiff.el
 ;; Version: 1.0
-;; Package-Requires: ((emacs "28.0"))
+;; Package-Requires: ((emacs "27"))
 ;; Keywords: pacman, pacdiff
 
 ;;; Commentary:
@@ -16,18 +16,25 @@
 
 ;;; Code:
 
-; TODO: defgroup
+(defgroup pacdiff nil
+  "Manage pacdiff files from within emacs.")
 
 (defcustom pacdiff-buffer "*pacdiff*"
-  "The name of the pacdiff buffer.")
+  "The name of the pacdiff buffer."
+  :type 'string
+  :group 'pacdiff)
 
 (defcustom pacdiff-cmd "/usr/bin/pacdiff -o"
-  "The binary used to create pacdiff output.")
+  "The binary used to create pacdiff output."
+  :type 'string
+  :group 'pacdiff)
 
 ;; Untested, but this way someone who prefers doas over sudo could
 ;; change this, right?
 (defcustom pacdiff-tramp "/sudo::"
-  "Tramp Method to get write permissions for the config files.")
+  "Tramp Method to get write permissions for the config files."
+  :type 'string
+  :group 'pacdiff)
 
 (defun pacdiff--find ()
   "Find packages files needing a merge using pacdiff."
