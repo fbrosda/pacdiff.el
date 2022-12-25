@@ -16,6 +16,8 @@
 
 ;;; Code:
 
+; TODO: defgroup
+
 (defcustom pacdiff-buffer "*pacdiff*"
   "The name of the pacdiff buffer.")
 
@@ -33,12 +35,15 @@
     (seq-filter (lambda (x) (length> x 0)) (split-string files "\n"))))
 
 (defun pacdiff--pacnew? (file)
+  "Check if FILE is a pacnew file."
   (string-match-p "\\.pacnew$" file))
 
 (defun pacdiff--pacsave? (file)
+  "Check if FILE is a pacsave file."
   (string-match-p "\\.pacsave$" file))
 
 (defun pacdiff--get-color (file)
+  "Get fontcolor depending on type of FILE."
   (cond ((pacdiff--pacnew? file) "forest green")
 	((pacdiff--pacsave? file) "blue")
 	(t "red")))
@@ -51,8 +56,9 @@
     (replace-regexp-in-string ":.*$" "" l3)))
 
 (defun pacdiff--get-base (filename)
-  "Get the base filename from a FILENAME including the
-.pacnew/.pacsave ending."
+  "Get the base filename from the given FILENAME.
+
+This removes the .pacnew/.pacsave ending from FILENAME."
   (replace-regexp-in-string "\\.pac\\(new\\|save\\)$" "" filename))
 
 (defun pacdiff-next-button ()
@@ -73,79 +79,90 @@
 	(goto-char (previous-button (point-max)))
       (goto-char btn))))
 
-(defun pacdiff-next (&optional arg)
-  "Move to next entry."
+(defun pacdiff-next (&optional cnt)
+  "Move to next entry including optional count CNT."
   (interactive "^P")
   (cond
-   ((eq arg '-)
+   ((eq cnt '-)
     (pacdiff-previous nil))
-   ((< (prefix-numeric-value arg) 0)
-    (pacdiff-previous (- (prefix-numeric-value arg))))
+   ((< (prefix-numeric-value cnt) 0)
+    (pacdiff-previous (- (prefix-numeric-value cnt))))
    (t
     (forward-char 1)
-    (re-search-forward "^*" nil t (prefix-numeric-value arg))
+    (re-search-forward "^*" nil t (prefix-numeric-value cnt))
     (beginning-of-line))))
 
-(defun pacdiff-previous (&optional arg)
-  "Move to previous entry."
+(defun pacdiff-previous (&optional cnt)
+  "Move to previous entry including optional count via CNT."
   (interactive "^P")
   (cond
-   ((eq arg '-)
+   ((eq cnt '-)
     (pacdiff-next nil))
-   ((< (prefix-numeric-value arg) 0)
-    (pacdiff-next (- (prefix-numeric-value arg))))
+   ((< (prefix-numeric-value cnt) 0)
+    (pacdiff-next (- (prefix-numeric-value cnt))))
    (t
-    (re-search-backward "^*" nil t (prefix-numeric-value arg)))))
+    (re-search-backward "^*" nil t (prefix-numeric-value cnt)))))
 
 (defun pacdiff-edit (&optional button)
-  "Edit original file and pacnew/pacsave via ediff."
+  "Edit original file and pacnew/pacsave via ediff.
+
+The optional BUTTON argument is passed, when the function is
+called on button click, but is currently unused."
   (interactive)
   (let* ((filename (pacdiff--get-file))
 	 (basename (pacdiff--get-base filename)))
     (unless (and basename (or (pacdiff--pacnew? filename)
 			      (pacdiff--pacsave? filename)))
-      (error "Could not determine original file from pacdiff output."))
+      (error "Could not determine original file from pacdiff output"))
     (ediff (concat pacdiff-tramp filename) (concat pacdiff-tramp basename))))
 
 (defun pacdiff-remove (&optional button)
-  "Remove the pacnew/pacsave file."
+  "Remove the pacnew/pacsave file.
+
+The optional BUTTON argument is passed, when the function is
+called on button click, but is currently unused."
   (interactive)
   (let ((filename (pacdiff--get-file)))
-    (when (y-or-n-p (format "Delete file: \"%s\"" filename))
+    (when (y-or-n-p (format "Delete file: \"%s\"?" filename))
       (delete-file (concat pacdiff-tramp filename)))))
 
 (defun pacdiff-overwrite (&optional button)
-  "Overwrite original file with pacnew/pacsave."
+  "Overwrite original file with pacnew/pacsave.
+
+The optional BUTTON argument is passed, when the function is
+called on button click, but is currently unused."
   (interactive)
   (let* ((filename (pacdiff--get-file))
 	 (basename (pacdiff--get-base filename)))
     (unless (and basename (or (pacdiff--pacnew? filename)
 			      (pacdiff--pacsave? filename)))
-      (error "Could not determine original file from pacdiff output."))
-    (when (y-or-n-p (format "Move \"%s\" to \"%s\"" filename basename))
+      (error "Could not determine original file from pacdiff output"))
+    (when (y-or-n-p (format "Move \"%s\" to \"%s\"?" filename basename))
       (rename-file (concat pacdiff-tramp filename) basename t))))
 
 (defun pacdiff--format-files (files)
-  "Insert one line for each file in FILES into the pacdiff buffer,
-including the different edit buttons."
+  "Create pacdiff entry for each file in FILES.
+
+This inserts first the filename and then the different buttons to
+handle each entry."
   (dolist (f files)
     (insert "* ")
     (insert (propertize f 'face `(:foreground ,(pacdiff--get-color f))))
     (insert ": ")
     (insert-text-button "(e)dit"
-			'action 'pacdiff-edit
+			'action #'pacdiff-edit
 			'face 'bold
 			'help-echo "Edit files with ediff")
     (insert " ")
     (insert-text-button "(r)emove"
-			'action 'pacdiff-remove
+			'action #'pacdiff-remove
 			'face 'bold
-			'help-echo "Remove pacnew")
+			'help-echo "Remove pacnew/pacsave")
     (insert " ")
     (insert-text-button "(o)verwrite"
-			'action 'pacdiff-overwrite
+			'action #'pacdiff-overwrite
 			'face 'bold
-			'help-echo "Overwrite with pacnew")
+			'help-echo "Overwrite with pacnew/pacsave")
     (insert "\n")))
 
 (defun pacdiff--setup (buffer)
@@ -175,15 +192,15 @@ including the different edit buttons."
 
 (defvar pacdiff-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map [remap scroll-up-command] 'pacdiff-next)
-    (define-key map [remap scroll-down-command] 'pacdiff-previous)
-    (define-key map [remap quit-window] 'pacdiff-quit-window)
-    (define-key map [remap revert-buffer] 'pacdiff-revert-buffer)
-    (define-key map (kbd "e") 'pacdiff-edit)
-    (define-key map (kbd "r") 'pacdiff-remove)
-    (define-key map (kbd "o") 'pacdiff-overwrite)
-    (define-key map (kbd "<tab>") 'pacdiff-next-button)
-    (define-key map (kbd "<backtab>") 'pacdiff-previous-button)
+    (define-key map [remap scroll-up-command] #'pacdiff-next)
+    (define-key map [remap scroll-down-command] #'pacdiff-previous)
+    (define-key map [remap quit-window] #'pacdiff-quit-window)
+    (define-key map [remap revert-buffer] #'pacdiff-revert-buffer)
+    (define-key map (kbd "e") #'pacdiff-edit)
+    (define-key map (kbd "r") #'pacdiff-remove)
+    (define-key map (kbd "o") #'pacdiff-overwrite)
+    (define-key map (kbd "<tab>") #'pacdiff-next-button)
+    (define-key map (kbd "<backtab>") #'pacdiff-previous-button)
     map)
   "Keymap for Pacdiff mode.")
 
