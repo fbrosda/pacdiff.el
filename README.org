@@ -13,6 +13,13 @@ the pacnew/pacsave version via ediff to merge the changes.
 Furthermore the buffer offers shortcuts to remove or overwrite with
 the pacnew/pacsave file.
 
+* Get Started
+- Install the package
+- When loaded call the function ~pacdiff~, this will create a buffer,
+  which shows all pacnew/pacsave files, which needs merging.  See the
+  mode description for available key bindings.
+
+
 * Status
 Main functionality (edit, remove, overwrite) is available.
 Visualization of which changes have been made to a file could be
