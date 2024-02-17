@@ -118,6 +118,7 @@ This removes the .pacnew/.pacsave ending from FILENAME."
 The optional BUTTON argument is passed, when the function is
 called on button click, but is currently unused."
   (interactive)
+  (ignore button)
   (let* ((filename (pacdiff--get-file))
          (basename (pacdiff--get-base filename)))
     (unless (and basename (or (pacdiff--pacnew? filename)
@@ -141,6 +142,7 @@ called on button click, but is currently unused."
 The optional BUTTON argument is passed, when the function is
 called on button click, but is currently unused."
   (interactive)
+  (ignore button)
   (let ((filename (pacdiff--get-file)))
     (when (y-or-n-p (format "Delete file: \"%s\"?" filename))
       (delete-file (concat pacdiff-tramp filename))
@@ -153,6 +155,7 @@ called on button click, but is currently unused."
 The optional BUTTON argument is passed, when the function is
 called on button click, but is currently unused."
   (interactive)
+  (ignore button)
   (let* ((filename (pacdiff--get-file))
          (basename (pacdiff--get-base filename)))
     (unless (and basename (or (pacdiff--pacnew? filename)
@@ -206,7 +209,7 @@ handle each entry."
     (erase-buffer)
     (pacdiff--setup (current-buffer))
     (read-only-mode)
-    (goto-line 1)))
+    (goto-char (point-min))))
 
 (defun pacdiff-quit-window ()
   "Kill buffer and quit the pacdiff session."
@@ -244,7 +247,7 @@ handle each entry."
       (pacdiff--setup buffer))
     (switch-to-buffer-other-window buffer)
     (pacdiff-mode)
-    (goto-line 1)))
+    (goto-char (point-min))))
 
 (provide 'pacdiff)
 
