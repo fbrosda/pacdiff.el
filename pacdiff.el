@@ -16,7 +16,7 @@
 ;;; Code:
 
 (defgroup pacdiff nil
-  "Manage pacdiff files from within emacs."
+  "Manage pacdiff files from within Emacs."
   :group 'packages)
 
 (defcustom pacdiff-buffer "*pacdiff*"
@@ -126,7 +126,7 @@ called on button click, but is currently unused."
     (ediff (concat pacdiff-tramp filename) (concat pacdiff-tramp basename))))
 
 (defun pacdiff--update-line (r)
-  "Mark the line as updated"
+  "Replace the first character in line with R."
   (unwind-protect
       (save-excursion
         (read-only-mode -1)
