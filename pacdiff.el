@@ -169,7 +169,7 @@ This inserts first the filename and then the different buttons to
 handle each entry."
   (dolist (f files)
     (insert pacdiff--line-marker)
-    (insert (propertize f 'face (get (pacdiff--get-face f) 'face-defface-spec )))
+    (insert (propertize f 'face (get (pacdiff--get-face f) 'face-defface-spec)))
     (insert ": ")
     (insert-text-button "(e)dit"
                         'action #'pacdiff-edit
