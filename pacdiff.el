@@ -14,6 +14,7 @@
 ;; manager.
 
 ;;; Code:
+(require 'subr-x)
 
 (defgroup pacdiff nil
   "Manage pacdiff files from within Emacs."
@@ -24,7 +25,7 @@
   :type 'string
   :group 'pacdiff)
 
-(defcustom pacdiff-cmd "/usr/bin/pacdiff -o"
+(defcustom pacdiff-cmd "/usr/bin/pacdiff"
   "The binary used to create pacdiff output."
   :type 'string
   :group 'pacdiff)
@@ -36,26 +37,43 @@
   :type 'string
   :group 'pacdiff)
 
+(defface pacdiff-pacnew-face
+  '((t :foreground "forest green"))
+  "Face to display pacnew files."
+  :group 'pacdiff)
+
+(defface pacdiff-pacsave-face
+  '((t :foreground "blue"))
+  "Face to display pacsave files."
+  :group 'pacdiff)
+
+(defface pacdiff-other-face
+  '((t :foreground "red"))
+  "Face to highlight other files.
+
+This should normally not be used as only pacenew and pacsave
+files should be listed."
+  :group 'pacdiff)
+
 (defconst pacdiff--line-marker "> ")
 
 (defun pacdiff--find ()
   "Find packages files needing a merge using pacdiff."
-  (let ((files (shell-command-to-string pacdiff-cmd)))
-    (seq-filter (lambda (x) (length> x 0)) (split-string files "\n"))))
+  (process-lines pacdiff-cmd "-o"))
 
-(defun pacdiff--pacnew? (file)
+(defun pacdiff--pacnew-p (file)
   "Check if FILE is a pacnew file."
   (string-match-p "\\.pacnew$" file))
 
-(defun pacdiff--pacsave? (file)
+(defun pacdiff--pacsave-p (file)
   "Check if FILE is a pacsave file."
   (string-match-p "\\.pacsave$" file))
 
-(defun pacdiff--get-color (file)
+(defun pacdiff--get-face (file)
   "Get fontcolor depending on type of FILE."
-  (cond ((pacdiff--pacnew? file) "forest green")
-        ((pacdiff--pacsave? file) "blue")
-        (t "red")))
+  (cond ((pacdiff--pacnew-p file) 'pacdiff-pacnew-face)
+        ((pacdiff--pacsave-p file) 'pacdiff-pacsave-face)
+        (t 'pacdiff-other-face)))
 
 (defun pacdiff--get-file ()
   "Get the filename from an entry line in the pacdiff buffer."
@@ -68,25 +86,17 @@
   "Get the base filename from the given FILENAME.
 
 This removes the .pacnew/.pacsave ending from FILENAME."
-  (replace-regexp-in-string "\\.pac\\(new\\|save\\)$" "" filename))
+  (file-name-sans-extension filename))
 
 (defun pacdiff-next-button ()
   "Jump to next button."
   (interactive)
-  (let* ((pos (point))
-         (btn (next-button pos)))
-    (if (eq btn nil)
-        (goto-char (next-button (point-min)))
-      (goto-char btn))))
+  (forward-button 1 t t t))
 
 (defun pacdiff-previous-button ()
   "Jump to previous button."
   (interactive)
-  (let* ((pos (point))
-         (btn (previous-button pos)))
-    (if (eq btn nil)
-        (goto-char (previous-button (point-max)))
-      (goto-char btn))))
+  (backward-button 1 t t t))
 
 (defun pacdiff-next (&optional cnt)
   "Move to next entry including optional count CNT."
@@ -112,54 +122,40 @@ This removes the .pacnew/.pacsave ending from FILENAME."
    (t
     (re-search-backward pacdiff--line-marker nil t (prefix-numeric-value cnt)))))
 
-(defun pacdiff-edit (&optional button)
-  "Edit original file and pacnew/pacsave via ediff.
-
-The optional BUTTON argument is passed, when the function is
-called on button click, but is currently unused."
+(defun pacdiff-edit (&optional _)
+  "Edit original file and pacnew/pacsave via ediff."
   (interactive)
-  (ignore button)
   (let* ((filename (pacdiff--get-file))
          (basename (pacdiff--get-base filename)))
-    (unless (and basename (or (pacdiff--pacnew? filename)
-                              (pacdiff--pacsave? filename)))
+    (unless (and basename (or (pacdiff--pacnew-p filename)
+                              (pacdiff--pacsave-p filename)))
       (error "Could not determine original file from pacdiff output"))
     (ediff (concat pacdiff-tramp filename) (concat pacdiff-tramp basename))))
 
 (defun pacdiff--update-line (r)
   "Replace the first character in line with R."
-  (unwind-protect
-      (save-excursion
-        (read-only-mode -1)
-        (beginning-of-line)
-        (delete-char 1)
-        (insert r))
-    (read-only-mode)))
+  (let ((inhibit-read-only t))
+    (save-excursion
+     (beginning-of-line)
+     (delete-char 1)
+     (insert r))))
 
-(defun pacdiff-remove (&optional button)
-  "Remove the pacnew/pacsave file.
-
-The optional BUTTON argument is passed, when the function is
-called on button click, but is currently unused."
+(defun pacdiff-remove (&optional _)
+  "Remove the pacnew/pacsave file."
   (interactive)
-  (ignore button)
   (let ((filename (pacdiff--get-file)))
     (when (y-or-n-p (format "Delete file: \"%s\"?" filename))
       (delete-file (concat pacdiff-tramp filename))
       (pacdiff--update-line "-")
       (pacdiff-next))))
 
-(defun pacdiff-overwrite (&optional button)
-  "Overwrite original file with pacnew/pacsave.
-
-The optional BUTTON argument is passed, when the function is
-called on button click, but is currently unused."
+(defun pacdiff-overwrite (&optional _)
+  "Overwrite original file with pacnew/pacsave."
   (interactive)
-  (ignore button)
   (let* ((filename (pacdiff--get-file))
          (basename (pacdiff--get-base filename)))
-    (unless (and basename (or (pacdiff--pacnew? filename)
-                              (pacdiff--pacsave? filename)))
+    (unless (and basename (or (pacdiff--pacnew-p filename)
+                              (pacdiff--pacsave-p filename)))
       (error "Could not determine original file from pacdiff output"))
     (when (y-or-n-p (format "Move \"%s\" to \"%s\"?" filename basename))
       (rename-file (concat pacdiff-tramp filename) basename t)
@@ -173,7 +169,7 @@ This inserts first the filename and then the different buttons to
 handle each entry."
   (dolist (f files)
     (insert pacdiff--line-marker)
-    (insert (propertize f 'face `(:foreground ,(pacdiff--get-color f))))
+    (insert (propertize f 'face (get (pacdiff--get-face f) 'face-defface-spec )))
     (insert ": ")
     (insert-text-button "(e)dit"
                         'action #'pacdiff-edit
@@ -191,9 +187,20 @@ handle each entry."
                         'help-echo "Overwrite with pacnew/pacsave")
     (insert "\n")))
 
+
+(defun pacdiff--revert-buffer (&rest _)
+  "Refresh the pacdiff buffer."
+  (interactive)
+  (let ((inhibit-read-only t))
+    (when (equal (current-buffer) (get-buffer pacdiff-buffer))
+     (erase-buffer)
+     (pacdiff--setup (current-buffer))
+     (goto-char (point-min)))))
+
 (defun pacdiff--setup (buffer)
   "Setup pacdiff BUFFER."
   (with-current-buffer buffer
+    (setq-local revert-buffer-function #'pacdiff--revert-buffer)
     (insert (format "-*- results \"%s\" -*-\n\n\n" pacdiff-cmd))
     (let ((files (pacdiff--find)))
       (if (length= files 0)
@@ -201,29 +208,12 @@ handle each entry."
         (insert (format "%d file(s):\n" (length files)))
         (pacdiff--format-files files)))))
 
-(defun pacdiff-revert-buffer ()
-  "Refresh the pacdiff buffer."
-  (interactive)
-  (when (equal (current-buffer) (get-buffer pacdiff-buffer))
-    (read-only-mode -1)
-    (erase-buffer)
-    (pacdiff--setup (current-buffer))
-    (read-only-mode)
-    (goto-char (point-min))))
-
-(defun pacdiff-quit-window ()
-  "Kill buffer and quit the pacdiff session."
-  (interactive)
-  (quit-window t))
-
 (defvar pacdiff-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map [remap scroll-up-command] #'pacdiff-next)
     (define-key map (kbd "n") #'pacdiff-next)
     (define-key map [remap scroll-down-command] #'pacdiff-previous)
     (define-key map (kbd "p") #'pacdiff-previous)
-    (define-key map [remap quit-window] #'pacdiff-quit-window)
-    (define-key map [remap revert-buffer] #'pacdiff-revert-buffer)
     (define-key map (kbd "e") #'pacdiff-edit)
     (define-key map (kbd "r") #'pacdiff-remove)
     (define-key map (kbd "o") #'pacdiff-overwrite)
@@ -241,13 +231,13 @@ handle each entry."
 (defun pacdiff ()
   "Open Buffer showing pacdiff files."
   (interactive)
-  (let* ((buffer (get-buffer pacdiff-buffer)))
-    (unless buffer
-      (setq buffer (generate-new-buffer pacdiff-buffer))
-      (pacdiff--setup buffer))
-    (switch-to-buffer-other-window buffer)
-    (pacdiff-mode)
-    (goto-char (point-min))))
+  (with-current-buffer (get-buffer-create pacdiff-buffer)
+    (unless (derived-mode-p 'pacdiff-mode)
+      (pacdiff--setup (current-buffer))
+      (goto-char (point-min))
+      (pacdiff-mode))
+    (pop-to-buffer (current-buffer)
+                   '((display-buffer-reuse-window display-buffer-same-window)))))
 
 (provide 'pacdiff)
 
