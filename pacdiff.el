@@ -73,8 +73,9 @@ If PADDING is non-nil, use it to pad space between file name and buttons."
                 "No files found."
               (mapconcat (lambda (f) (pacdiff--entry f max)) files "\n")))
     (goto-char (point-min))
-    (forward-line (1- line))
-    (forward-char col)))
+    (unless (zerop (length files))
+      (forward-line (1- line))
+      (forward-char col))))
 
 (defun pacdiff--current-filename ()
   "Return pacdiff filename associated with point.
