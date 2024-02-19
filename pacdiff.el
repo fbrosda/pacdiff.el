@@ -6,6 +6,7 @@
 ;;         Nicholas Vollmer
 ;; URL: https://github.com/fbrosda/pacdiff.el
 ;; Package-Requires: ((emacs "28.1"))
+;; SPDX-License-Identifier: BSD-3-Clause
 ;; Version: 0.1
 
 ;;; Commentary:
