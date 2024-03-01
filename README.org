@@ -2,6 +2,8 @@
 #+author: Fabian Brosda
 #+date: 2022:12:22
 
+[[https://melpa.org/#/pacdiff][file:https://melpa.org/packages/pacdiff-badge.svg]]
+
 * About
 This package provides a small wrapper around the pacdiff utility used
 on Arch Linux systems to update configuration files after package
