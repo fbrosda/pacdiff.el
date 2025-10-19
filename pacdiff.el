@@ -7,14 +7,19 @@
 ;; URL: https://github.com/fbrosda/pacdiff.el
 ;; Package-Requires: ((emacs "28.1"))
 ;; SPDX-License-Identifier: BSD-3-Clause
-;; Version: 0.1
+;; Version: 0.2
 
 ;;; Commentary:
 
 ;; This package provides an Arch Linux 'pacdiff' file management UI
 ;; via the `pacdiff' command.
+;;
+;; Optional dependency:
+;; - emacs >= 30.1: 'tramp-file-name-with-sudo' is used to acquire root permissions
 
 ;;; Code:
+
+(require 'tramp-cmds)
 
 (defgroup pacdiff nil
   "Major mode for pacdiff file management."
@@ -31,7 +36,9 @@
 
 ;; Untested, but this way someone who prefers doas over sudo could change this.
 (defcustom pacdiff-tramp "/sudo::"
-  "Tramp Method to get write permissions for the config files."
+  "Tramp Method to get write permissions for the config files. Only used,
+if emacs version is below 30.1. Otherwise 'tramp-file-name-with-sudo' is
+used."
   :type 'string)
 
 (defconst pacdiff--regexp "\\.pac\\(save\\|new\\)\\'"
@@ -82,12 +89,19 @@ If PADDING is non-nil, use it to pad space between file name and buttons."
 Signal an error if no file is found."
   (or (get-text-property (point) 'pacdiff) (user-error "No pacdiff file at point")))
 
+(defun pacdiff--filename-with-sudo (filename)
+  "Convert FILENAME into a multi-hop file name with \"sudo\".
+Either using `tramp-file-name-with-sudo', if available, or a simple fallback."
+  (if (fboundp 'tramp-file-name-with-sudo)
+      (tramp-file-name-with-sudo filename)
+    (concat pacdiff-tramp filename)))
+
 (defun pacdiff-remove (&optional _)
   "Remove the pacnew/pacsave file."
   (interactive nil pacdiff-mode)
   (let ((filename (pacdiff--current-filename)))
     (when (yes-or-no-p (format "Delete file: \"%s\"?" filename))
-      (delete-file (concat pacdiff-tramp filename))
+      (delete-file (pacdiff--filename-with-sudo filename))
       (pacdiff--draw))))
 
 (defun pacdiff-overwrite (&optional _)
@@ -96,7 +110,7 @@ Signal an error if no file is found."
   (let* ((filename (pacdiff--current-filename))
          (noext (file-name-sans-extension filename)))
     (when (yes-or-no-p (format "Move \"%s\" to \"%s\"?" filename noext))
-      (rename-file (concat pacdiff-tramp filename) noext t)
+      (rename-file (pacdiff--filename-with-sudo filename) noext t)
       (pacdiff--draw))))
 
 ;;@MAYBE: redraw pacdiff buffer on `ediff-quit-hook'?
@@ -105,7 +119,7 @@ Signal an error if no file is found."
   (interactive nil pacdiff-mode)
   (let* ((filename (pacdiff--current-filename))
          (noext (file-name-sans-extension filename)))
-    (ediff (concat pacdiff-tramp filename) (concat pacdiff-tramp noext))))
+    (ediff (pacdiff--filename-with-sudo filename) (pacdiff--filename-with-sudo noext))))
 
 (defvar pacdiff-mode-map
   (let ((map (make-sparse-keymap)))
